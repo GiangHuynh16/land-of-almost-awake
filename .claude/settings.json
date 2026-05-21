@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p /Users/hagiang/Workspace/proj/AchievementTracking/adventure-passport && ls /Users/hagiang/Workspace/proj/AchievementTracking)",
+      "Bash(npm create *)",
+      "Bash(npx --yes create-vite@latest . --template react)",
+      "Bash(npm --version)",
+      "Bash(nvm --version)",
+      "WebSearch",
+      "Bash(mkdir -p /Users/hagiang/Workspace/proj/AchievementTracking/docs/superpowers/specs)",
+      "Skill(codex:rescue)",
+      "Skill(codex:rescue:*)",
+      "Bash(node \"/Users/hagiang/.claude/plugins/cache/openai-codex/codex/1.0.4/scripts/codex-companion.mjs\" task-resume-candidate --json)",
+      "Skill(codex:setup)",
+      "Skill(codex:setup:*)",
+      "Bash(node /Users/hagiang/.claude/plugins/cache/openai-codex/codex/1.0.4/scripts/codex-companion.mjs task --resume-last 'Respond as a senior engineer reviewing Point 2 of the design spec at /Users/hagiang/Workspace/proj/AchievementTracking/docs/superpowers/specs/2026-05-20-land-of-almost-awake-design.md. The question is: Should we add delete functionality for achievements in v1? *)",
+      "Bash(node /Users/hagiang/.claude/plugins/cache/openai-codex/codex/1.0.4/scripts/codex-companion.mjs task 'Reviewing spec at /Users/hagiang/Workspace/proj/AchievementTracking/docs/superpowers/specs/2026-05-20-land-of-almost-awake-design.md point by point. Points 1 and 2 resolved. *)",
+      "Bash(node /Users/hagiang/.claude/plugins/cache/openai-codex/codex/1.0.4/scripts/codex-companion.mjs task --resume-last --write '<task> *)",
+      "Bash(node /Users/hagiang/.claude/plugins/cache/openai-codex/codex/1.0.4/scripts/codex-companion.mjs task 'Respond as a senior frontend engineer reviewing a spec decision. Context: building a gamified world map UI with 6 kingdoms, each with 3 visual states \\(locked/grayscale, active/full color + glow pulse, completed/full color + seal\\), clickable kingdoms, unlock animations \\(glow burst, color transition\\), and a hand-illustrated / book illustration aesthetic. *)",
+      "Bash(node /Users/hagiang/.claude/plugins/cache/openai-codex/codex/1.0.4/scripts/codex-companion.mjs task --resume-last 'Context: Reviewing spec at /Users/hagiang/Workspace/proj/AchievementTracking/docs/superpowers/specs/2026-05-20-land-of-almost-awake-design.md point by point. Points 1-5 resolved. *)",
+      "Bash(sed -i '' 's|adventure-passport/|land-of-almost-awake/|g' /Users/hagiang/Workspace/proj/AchievementTracking/docs/superpowers/plans/2026-05-20-land-of-almost-awake.md)",
+      "Bash(sed -i '' 's|adventure-passport/|land-of-almost-awake/|g' /Users/hagiang/Workspace/proj/AchievementTracking/docs/superpowers/specs/2026-05-20-land-of-almost-awake-design.md)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(npm install *)",
+      "Bash(node /Users/hagiang/.claude/plugins/cache/openai-codex/codex/1.0.4/scripts/codex-companion.mjs task '<task> *)",
+      "Bash(git filter-branch *)",
+      "Bash(git stash *)",
+      "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch --force --index-filter 'git rm --cached --ignore-unmatch land-of-almost-awake/backend/.env land-of-almost-awake/frontend/.env' --prune-empty --tag-name-filter cat -- --all)",
+      "Bash(git ls-tree *)"
+    ],
+    "additionalDirectories": [
+      "/Users/hagiang/Workspace/proj/AchievementTracking",
+      "/Users/hagiang/Workspace/proj/AchievementTracking/docs/superpowers"
+    ]
+  }
+}
