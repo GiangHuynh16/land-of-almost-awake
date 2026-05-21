@@ -27,10 +27,11 @@ export function Aurora({ variant = 'default', intensity = 1, style = {} }) {
         <div key={i} style={{
           position: 'absolute', top: l.top, left: l.left, width: l.w, height: l.h,
           background: `radial-gradient(ellipse at center, ${l.color} 0%, transparent 65%)`,
-          filter: 'blur(50px)',
+          // Reduced blur radius (50→32px) — at 50px the rasterizer cost on real GPUs
+          // dominated compositing during camera moves. 32px reads the same at this opacity.
+          filter: 'blur(32px)',
           animation: l.anim,
           opacity: intensity,
-          willChange: 'transform',
         }} />
       ))}
     </div>
@@ -77,15 +78,24 @@ export function Motes({ count = 30, color = '#fdf2d9', area = 'full' }) {
       size: 1 + rng() * 2.2,
     }))
   }, [count, area])
+  // CSS-transform animation instead of SMIL `<animate>` — composited on the GPU
+  // (zero layout/paint per frame). Each mote is its own absolutely-positioned dot
+  // so `translateY` is cheap; the previous SVG approach made the browser repaint
+  // the whole `<svg>` viewport every tick.
   return (
-    <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
+    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
       {motes.map((m, i) => (
-        <circle key={i} cx={m.x} cy={m.y} r={m.size * 0.12} fill={color} opacity="0.45">
-          <animate attributeName="cy" values={`${m.y};${m.y - 12};${m.y}`} dur={`${m.d}s`} begin={`${m.delay}s`} repeatCount="indefinite" />
-          <animate attributeName="opacity" values="0;0.65;0" dur={`${m.d}s`} begin={`${m.delay}s`} repeatCount="indefinite" />
-        </circle>
+        <div key={i} style={{
+          position: 'absolute',
+          left: `${m.x}%`, top: `${m.y}%`,
+          width: `${m.size * 1.6}px`, height: `${m.size * 1.6}px`,
+          borderRadius: '50%',
+          background: color,
+          opacity: 0,
+          animation: `mote-rise ${m.d}s ease-in-out ${m.delay}s infinite`,
+        }} />
       ))}
-    </svg>
+    </div>
   )
 }
 
@@ -119,26 +129,28 @@ export function NebulaBackdrop({ tint = 'default', brightness = 1 }) {
     pale: ['rgba(180, 200, 230, 0.22)', 'rgba(220, 200, 200, 0.18)', 'rgba(160, 180, 220, 0.16)'],
   }
   const c = palettes[tint] || palettes.default
+  // Blur radii cut (50/50/60 → 32/32/36) — large blurs are the dominant compositor cost
+  // on real-device GPUs; at these opacities the visual difference is imperceptible.
   return (
     <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden', opacity: brightness, transition: 'opacity 900ms ease' }}>
       <div style={{
         position: 'absolute', top: '10%', left: '5%', width: '55%', height: '60%',
         background: `radial-gradient(ellipse at center, ${c[0]} 0%, transparent 60%)`,
-        filter: 'blur(50px)',
+        filter: 'blur(32px)',
         animation: 'aurora-a 32s ease-in-out infinite',
         transition: 'background 900ms ease',
       }} />
       <div style={{
         position: 'absolute', top: '20%', right: '5%', width: '55%', height: '55%',
         background: `radial-gradient(ellipse at center, ${c[1]} 0%, transparent 60%)`,
-        filter: 'blur(50px)',
+        filter: 'blur(32px)',
         animation: 'aurora-b 36s ease-in-out infinite',
         transition: 'background 900ms ease',
       }} />
       <div style={{
         position: 'absolute', top: '45%', left: '30%', width: '45%', height: '45%',
         background: `radial-gradient(ellipse at center, ${c[2]} 0%, transparent 60%)`,
-        filter: 'blur(60px)',
+        filter: 'blur(36px)',
         animation: 'aurora-c 42s ease-in-out infinite',
         transition: 'background 900ms ease',
       }} />

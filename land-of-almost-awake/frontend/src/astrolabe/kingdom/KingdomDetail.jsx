@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Aurora, BrassDefs, Motes, NebulaBackdrop, Stars } from '../atmosphere.jsx'
-import { darken, lighten } from '../colors.js'
+import { darken } from '../colors.js'
 import { DEEDS_BY_KINGDOM, KINGDOMS, MIVERITAS_DEEDS, placeholderFor } from '../data.js'
 import { RotatingPlanet } from './RotatingPlanet.jsx'
 import {
@@ -13,11 +13,14 @@ import {
   ViewToggle,
 } from './views.jsx'
 
-export default function KingdomDetail() {
-  const { id } = useParams()
+export default function KingdomDetail({ kingdomId: kingdomIdProp, onBack }) {
+  const params = useParams()
   const navigate = useNavigate()
+  const id = kingdomIdProp || params.id
   const kingdom = KINGDOMS.find(x => x.id === id)
   const isMiveritas = id === 'miveritas'
+
+  const handleBack = onBack || (() => navigate('/'))
 
   const [view, setView] = useState('starlog')
   const [adding, setAdding] = useState(false)
@@ -91,7 +94,7 @@ export default function KingdomDetail() {
     : `radial-gradient(ellipse at 50% 0%, ${kingdom.color}28 0%, transparent 55%), radial-gradient(ellipse at 50% 100%, ${kingdom.color}18 0%, transparent 65%)`
 
   return (
-    <div className="screen-anim" style={{
+    <div style={{
       position: 'absolute', inset: 0,
       background: 'radial-gradient(ellipse at 50% 45%, #0c1232 0%, #07091e 50%, #030414 100%)',
       overflow: 'hidden',
@@ -108,7 +111,7 @@ export default function KingdomDetail() {
       <div className="grain-dark" style={{ opacity: 0.18 }} />
       <div style={{ position: 'absolute', inset: 0, background: surfaceGlow, pointerEvents: 'none' }} />
 
-      <button onClick={() => navigate('/')} className="k-back" style={{
+      <button onClick={handleBack} className="k-back" style={{
         all: 'unset', position: 'absolute', left: 28, top: 26, zIndex: 60,
         display: 'inline-flex', alignItems: 'center', gap: 10,
         fontFamily: "'Cormorant Garamond', serif", fontSize: 15,

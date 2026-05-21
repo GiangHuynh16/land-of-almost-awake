@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { Aurora, BrassDefs, BrassRing, Motes, NebulaBackdrop, Stars, useViewport } from '../atmosphere.jsx'
 import { GLYPHS } from '../glyphs.jsx'
 import { KINGDOMS, RECENT_SEALS } from '../data.js'
@@ -53,13 +52,16 @@ function moonClip(phase) {
   return `polygon(0% 0%, ${w}% 0%, ${w}% 100%, 0% 100%)`
 }
 
-export default function Astrolabe() {
-  const navigate = useNavigate()
+export default function Astrolabe({ onSelectKingdom, dimExcept = null, cinematic = false }) {
   const [hover, setHover] = useState(null)
   const vp = useViewport()
   const isNarrow = vp.w < 720
   const cx = 500
   const cy = isNarrow ? 380 : 360
+
+  // When CinematicStage is mid-camera move (dive/kingdom/rising), dimExcept is non-null.
+  // World view = no kingdom in focus = show all HTML overlays.
+  const worldMode = !dimExcept
 
   const [hora, setHora] = useState(8)
   const [dies, setDies] = useState(3)
@@ -70,30 +72,44 @@ export default function Astrolabe() {
   const dayLabel = DAY_LABELS[dies] || DAY_LABELS[3]
   const dayLog = RECENT_SEALS.filter(s => s.when === DAY_LABELS[dies])
 
-  function openKingdom(id) {
-    navigate(`/kingdom/${id}`)
+  function openKingdom(id, event) {
+    if (!onSelectKingdom) return
+    const orbEl = event?.currentTarget?.querySelector?.('[data-orb-core]') ?? event?.currentTarget
+    const bbox = orbEl?.getBoundingClientRect?.()
+    const pos = bbox
+      ? {
+          x: bbox.left + bbox.width / 2,
+          y: bbox.top + bbox.height / 2,
+          size: Math.max(bbox.width, bbox.height),
+        }
+      : null
+    onSelectKingdom(id, pos)
   }
 
   const outerKingdoms = KINGDOMS.filter(k => k.id !== 'miveritas')
   const miveritas = KINGDOMS.find(k => k.id === 'miveritas')
 
   return (
-    <div className="screen-anim" style={{
-      position: 'absolute', inset: 0,
-      background: hourTint.bg,
-      overflow: 'hidden',
-      transition: 'background 900ms ease',
-    }}>
+    <div
+      className={cinematic ? 'astrolabe-cinematic' : undefined}
+      style={{
+        position: 'absolute', inset: 0,
+        background: hourTint.bg,
+        overflow: 'hidden',
+        transition: cinematic ? 'none' : 'background 900ms ease',
+      }}
+    >
       <BrassDefs />
 
-      <Stars count={420} seed={4} opacity={0.92} milky />
-      <Stars count={70} seed={17} opacity={0.55} />
-      <Stars count={16} seed={31} opacity={1} />
+      {/* Star count tuned for DOM weight — 506→220 (milky band still reads dense at this opacity). */}
+      <Stars count={170} seed={4} opacity={0.92} milky />
+      <Stars count={40} seed={17} opacity={0.55} />
+      <Stars count={10} seed={31} opacity={1} />
 
       <NebulaBackdrop tint={hourTint.nebula} brightness={0.5 + moonBright * 0.5} />
-      <Aurora variant="miveritas" intensity={0.35 + (1 - moonBright) * 0.3} />
-      <Motes count={30} color="#fde4a0" />
-      <div className="grain-dark" style={{ opacity: 0.18 }} />
+      {!cinematic && <Aurora variant="miveritas" intensity={0.35 + (1 - moonBright) * 0.3} />}
+      {!cinematic && <Motes count={30} color="#fde4a0" />}
+      {!cinematic && <div className="grain-dark" style={{ opacity: 0.18 }} />}
 
       <div style={{
         position: 'absolute', inset: 0,
@@ -167,11 +183,13 @@ export default function Astrolabe() {
               <g key={k.id}>
                 <line x1={cx} y1={cy} x2={x} y2={y}
                   stroke="rgba(200, 156, 90, 0.4)" strokeWidth="0.5" strokeDasharray="2 4" />
-                <circle r="1.5" fill="#fde4a0" opacity="0.85">
-                  <animate attributeName="cx" values={`${cx};${x};${cx}`} dur={`${9 + i}s`} repeatCount="indefinite" />
-                  <animate attributeName="cy" values={`${cy};${y};${cy}`} dur={`${9 + i}s`} repeatCount="indefinite" />
-                  <animate attributeName="opacity" values="0;0.9;0" dur={`${9 + i}s`} repeatCount="indefinite" />
-                </circle>
+                {!cinematic && (
+                  <circle r="1.5" fill="#fde4a0" opacity="0.85">
+                    <animate attributeName="cx" values={`${cx};${x};${cx}`} dur={`${9 + i}s`} repeatCount="indefinite" />
+                    <animate attributeName="cy" values={`${cy};${y};${cy}`} dur={`${9 + i}s`} repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0;0.9;0" dur={`${9 + i}s`} repeatCount="indefinite" />
+                  </circle>
+                )}
               </g>
             )
           })}
@@ -186,7 +204,10 @@ export default function Astrolabe() {
           })()}
         </g>
 
-        <g style={{ transformOrigin: `${cx}px ${cy}px`, animation: 'alidade-rotate 240s linear infinite' }}>
+        <g style={{
+          transformOrigin: `${cx}px ${cy}px`,
+          animation: cinematic ? 'none' : 'alidade-rotate 240s linear infinite',
+        }}>
           <line x1={cx - 296} y1={cy} x2={cx + 296} y2={cy}
             stroke="url(#brass-grad)" strokeWidth="2.6" strokeLinecap="round" opacity="0.55" />
           <line x1={cx - 296} y1={cy} x2={cx + 296} y2={cy}
@@ -203,20 +224,26 @@ export default function Astrolabe() {
           const r = 162
           const x = cx + Math.cos(a) * r
           const y = cy + Math.sin(a) * r
+          const dimmed = dimExcept && dimExcept !== k.id
           return (
             <AstroKingdom key={k.id} k={k} cx={x} cy={y} angle={a}
-              hovered={hover === k.id}
+              hovered={!cinematic && hover === k.id}
+              dimmed={dimmed}
+              cinematic={cinematic}
+              swayIndex={i}
               onHover={() => setHover(k.id)}
               onLeave={() => setHover(null)}
-              onOpen={() => openKingdom(k.id)} />
+              onOpen={(e) => openKingdom(k.id, e)} />
           )
         })}
 
         <AstroMiveritas cx={cx} cy={cy} k={miveritas}
-          hovered={hover === 'miveritas'}
+          hovered={!cinematic && hover === 'miveritas'}
+          dimmed={dimExcept && dimExcept !== 'miveritas'}
           onHover={() => setHover('miveritas')}
           onLeave={() => setHover(null)}
-          onOpen={() => openKingdom('miveritas')} />
+          cinematic={cinematic}
+          onOpen={(e) => openKingdom('miveritas', e)} />
 
         {[0, 90, 180, 270].map(deg => {
           const a = deg * Math.PI / 180
@@ -240,38 +267,49 @@ export default function Astrolabe() {
         </g>
       </svg>
 
+      {/* All HTML overlays grouped — hidden during dive/kingdom/rising so they don't
+          get perspective-scaled out of viewport and produce flicker.
+          Wrapper itself MUST keep pointerEvents: 'none' so SVG orb clicks pass through.
+          Interactive children (MoonPhase, BrassDial) opt back in via their own style. */}
       <div style={{
-        position: 'absolute', left: 0, right: 0, top: '2.5%',
-        textAlign: 'center', pointerEvents: 'none', zIndex: 5,
+        position: 'absolute', inset: 0,
+        opacity: worldMode ? 1 : 0,
+        transition: 'opacity 400ms ease',
+        pointerEvents: 'none',
       }}>
-        <div className="serif" style={{
-          fontSize: 'clamp(28px, 3.4vw, 52px)',
-          lineHeight: 1, fontStyle: 'italic', fontWeight: 400,
-          color: 'rgba(247, 236, 207, 0.92)',
+        <div style={{
+          position: 'absolute', left: 0, right: 0, top: '2.5%',
+          textAlign: 'center', pointerEvents: 'none', zIndex: 5,
         }}>
-          the Land of Almost Awake
+          <div className="serif" style={{
+            fontSize: 'clamp(28px, 3.4vw, 52px)',
+            lineHeight: 1, fontStyle: 'italic', fontWeight: 400,
+            color: 'rgba(247, 236, 207, 0.92)',
+          }}>
+            the Land of Almost Awake
+          </div>
+          <div className="smallcaps" style={{ marginTop: 6, fontSize: 9, color: 'rgba(200, 156, 90, 0.7)', letterSpacing: '0.42em' }}>
+            ✦  an astrolabe for the third moon  ✦
+          </div>
         </div>
-        <div className="smallcaps" style={{ marginTop: 6, fontSize: 9, color: 'rgba(200, 156, 90, 0.7)', letterSpacing: '0.42em' }}>
-          ✦  an astrolabe for the third moon  ✦
+
+        <div className="v4-only-wide"><MoonPhase phase={moonPhase} onCycle={() => setMoonPhase(p => (p + 1) % 8)} /></div>
+
+        <div className="v4-only-wide">
+          <BrassDial side="left" label="HORÆ" value={hora} setValue={setHora} min={0} max={12}
+            display={`${hora}`} subDisplay={hora < 6 ? 'DUSK' : hora < 10 ? 'MIDNIGHT' : 'DAWN'} />
         </div>
+        <div className="v4-only-wide">
+          <BrassDial side="right" label="DIES" value={dies} setValue={setDies} min={0} max={6}
+            display={DAY_LABELS_SHORT[dies]} subDisplay={dayLabel} />
+        </div>
+
+        <div className="v4-only-wide"><DayLedger day={DAY_LABELS[dies]} entries={dayLog} /></div>
+
+        <AstroCompanionsRibbon />
+
+        {hover && <AstroTooltip kingdom={KINGDOMS.find(k => k.id === hover)} />}
       </div>
-
-      <div className="v4-only-wide"><MoonPhase phase={moonPhase} onCycle={() => setMoonPhase(p => (p + 1) % 8)} /></div>
-
-      <div className="v4-only-wide">
-        <BrassDial side="left" label="HORÆ" value={hora} setValue={setHora} min={0} max={12}
-          display={`${hora}`} subDisplay={hora < 6 ? 'DUSK' : hora < 10 ? 'MIDNIGHT' : 'DAWN'} />
-      </div>
-      <div className="v4-only-wide">
-        <BrassDial side="right" label="DIES" value={dies} setValue={setDies} min={0} max={6}
-          display={DAY_LABELS_SHORT[dies]} subDisplay={dayLabel} />
-      </div>
-
-      <div className="v4-only-wide"><DayLedger day={DAY_LABELS[dies]} entries={dayLog} /></div>
-
-      <AstroCompanionsRibbon />
-
-      {hover && <AstroTooltip kingdom={KINGDOMS.find(k => k.id === hover)} />}
     </div>
   )
 }
@@ -359,15 +397,30 @@ function ZodiacField() {
   )
 }
 
-function AstroKingdom({ k, cx, cy, angle, hovered, onHover, onLeave, onOpen }) {
+// Per-orb sway timing — duration & negative delay both varied so the 5 orbs
+// never read as a synchronised wave. Values are prime-ish offsets, not random,
+// so the motion is deterministic across renders.
+const SWAY_DURATIONS = [10.2, 11.8, 9.6, 12.4, 10.7]
+const SWAY_DELAYS = [0, -1.7, -3.4, -5.1, -6.8]
+
+function AstroKingdom({ k, cx, cy, angle, hovered, dimmed, cinematic, swayIndex = 0, onHover, onLeave, onOpen }) {
   const r = 24
   const labelDist = 50
   const lx = cx + Math.cos(angle) * labelDist
   const ly = cy + Math.sin(angle) * labelDist
   const textAnchor = Math.cos(angle) > 0.3 ? 'start' : Math.cos(angle) < -0.3 ? 'end' : 'middle'
   const gradId = `astro-${k.id}`
+  const swayDur = SWAY_DURATIONS[swayIndex % SWAY_DURATIONS.length]
+  const swayDelay = SWAY_DELAYS[swayIndex % SWAY_DELAYS.length]
   return (
-    <g style={{ cursor: 'pointer' }} onMouseEnter={onHover} onMouseLeave={onLeave} onClick={onOpen}>
+    <g style={{
+      cursor: 'pointer',
+      opacity: dimmed ? 0.18 : 1,
+      transition: 'opacity 380ms ease',
+      // Disabled during cinematic so the camera anchors on the orb's true centre.
+      animation: cinematic ? 'none' : `orb-sway ${swayDur}s ease-in-out ${swayDelay}s infinite`,
+    }}
+      onMouseEnter={onHover} onMouseLeave={onLeave} onClick={(e) => onOpen(e)}>
       <defs>
         <radialGradient id={gradId} cx="36%" cy="32%" r="70%">
           <stop offset="0%" stopColor={lighten(k.color, 0.45)} />
@@ -376,7 +429,7 @@ function AstroKingdom({ k, cx, cy, angle, hovered, onHover, onLeave, onOpen }) {
         </radialGradient>
       </defs>
 
-      <circle cx={cx} cy={cy} r={r + 14} fill={k.color} opacity="0.25" filter="url(#bloom-soft)" />
+      {!cinematic && <circle cx={cx} cy={cy} r={r + 14} fill={k.color} opacity="0.25" filter="url(#bloom-soft)" />}
       <circle cx={cx} cy={cy} r={r + 5} fill="none" stroke="#c89c5a" strokeWidth="1.1" opacity="0.65" />
       <circle cx={cx} cy={cy} r={r + 9} fill="none" stroke="#c89c5a" strokeWidth="0.3" opacity="0.4" />
       {[0, 90, 180, 270].map(deg => {
@@ -384,8 +437,11 @@ function AstroKingdom({ k, cx, cy, angle, hovered, onHover, onLeave, onOpen }) {
         return <circle key={deg} cx={cx + Math.cos(a) * (r + 7)} cy={cy + Math.sin(a) * (r + 7)} r="1.4" fill="url(#brass-rivet)" />
       })}
 
-      <circle cx={cx} cy={cy} r={r} fill={`url(#${gradId})`} opacity="0.95"
-        style={{ transformOrigin: `${cx}px ${cy}px`, animation: 'breathe 6.5s ease-in-out infinite' }} />
+      <circle data-orb-core data-kingdom-id={k.id} cx={cx} cy={cy} r={r} fill={`url(#${gradId})`} opacity="0.95"
+        style={{
+          transformOrigin: `${cx}px ${cy}px`,
+          animation: cinematic ? 'none' : 'breathe 6.5s ease-in-out infinite',
+        }} />
       <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255, 248, 230, 0.55)" strokeWidth="0.5" />
       <circle cx={cx} cy={cy} r={r * 0.96} fill="none" stroke={darken(k.color, 0.6)} strokeWidth="0.3" opacity="0.45" />
 
@@ -398,7 +454,7 @@ function AstroKingdom({ k, cx, cy, angle, hovered, onHover, onLeave, onOpen }) {
 
       <ProgressArc cx={cx} cy={cy} r={r + 5} progress={k.sealed / k.total} color={k.color} />
 
-      {hovered && (
+      {hovered && !cinematic && (
         <circle cx={cx} cy={cy} r={r + 5} fill="none" stroke={k.color} strokeWidth="0.8" opacity="0.55">
           <animate attributeName="r" values={`${r};${r + 24}`} dur="1.8s" repeatCount="indefinite" />
           <animate attributeName="opacity" values="0.6;0" dur="1.8s" repeatCount="indefinite" />
@@ -418,10 +474,17 @@ function AstroKingdom({ k, cx, cy, angle, hovered, onHover, onLeave, onOpen }) {
   )
 }
 
-function AstroMiveritas({ cx, cy, k, hovered, onHover, onLeave, onOpen }) {
+function AstroMiveritas({ cx, cy, k, hovered, dimmed, cinematic, onHover, onLeave, onOpen }) {
   const r = 50
   return (
-    <g style={{ cursor: 'pointer' }} onMouseEnter={onHover} onMouseLeave={onLeave} onClick={onOpen}>
+    <g style={{
+      cursor: 'pointer',
+      opacity: dimmed ? 0.18 : 1,
+      transition: 'opacity 380ms ease',
+      // Smaller range + slower beat — Miveritas anchors the scene, shouldn't drift loud.
+      animation: cinematic ? 'none' : 'orb-sway-center 16s ease-in-out -3.2s infinite',
+    }}
+      onMouseEnter={onHover} onMouseLeave={onLeave} onClick={(e) => onOpen(e)}>
       <defs>
         <radialGradient id="astro-mv-half-a" cx="20%" cy="35%" r="80%">
           <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
@@ -439,7 +502,10 @@ function AstroMiveritas({ cx, cy, k, hovered, onHover, onLeave, onOpen }) {
         </linearGradient>
       </defs>
 
-      <g style={{ transformOrigin: `${cx}px ${cy}px`, animation: 'orbit-spin 90s linear infinite' }} opacity="0.6">
+      <g style={{
+        transformOrigin: `${cx}px ${cy}px`,
+        animation: cinematic ? 'none' : 'orbit-spin 90s linear infinite',
+      }} opacity="0.6">
         {Array.from({ length: 8 }).map((_, i) => {
           const a = (i / 8) * Math.PI * 2
           const x = cx + Math.cos(a) * 130
@@ -452,8 +518,12 @@ function AstroMiveritas({ cx, cy, k, hovered, onHover, onLeave, onOpen }) {
         })}
       </g>
 
-      <circle cx={cx - r * 0.25} cy={cy - r * 0.1} r={r + 28} fill={k.color} opacity="0.4" filter="url(#bloom-strong)" />
-      <circle cx={cx + r * 0.25} cy={cy + r * 0.1} r={r + 28} fill={k.colorAlt} opacity="0.4" filter="url(#bloom-strong)" />
+      {!cinematic && (
+        <>
+          <circle cx={cx - r * 0.25} cy={cy - r * 0.1} r={r + 28} fill={k.color} opacity="0.4" filter="url(#bloom-strong)" />
+          <circle cx={cx + r * 0.25} cy={cy + r * 0.1} r={r + 28} fill={k.colorAlt} opacity="0.4" filter="url(#bloom-strong)" />
+        </>
+      )}
 
       <BrassRing cx={cx} cy={cy} r={r + 28} color="#c89c5a" strokeWidth={0.6} ticks={36} opacity={0.7} />
       <BrassRing cx={cx} cy={cy} r={r + 18} color="#c89c5a" strokeWidth={0.4} ticks={24} opacity={0.5} dashed />
@@ -464,8 +534,11 @@ function AstroMiveritas({ cx, cy, k, hovered, onHover, onLeave, onOpen }) {
         return <circle key={i} cx={x} cy={y} r="2.6" fill="url(#brass-rivet)" />
       })}
 
-      <g style={{ transformOrigin: `${cx}px ${cy}px`, animation: 'breathe 6s ease-in-out infinite' }}>
-        <circle cx={cx} cy={cy} r={r} fill="url(#astro-mv-half-a)" />
+      <g style={{
+        transformOrigin: `${cx}px ${cy}px`,
+        animation: cinematic ? 'none' : 'breathe 6s ease-in-out infinite',
+      }}>
+        <circle data-orb-core data-kingdom-id="miveritas" cx={cx} cy={cy} r={r} fill="url(#astro-mv-half-a)" />
         <path d={`M ${cx} ${cy - r} A ${r} ${r} 0 0 1 ${cx} ${cy + r} L ${cx} ${cy} Z`}
           fill="url(#astro-mv-half-b)" opacity="0.95" transform={`rotate(20 ${cx} ${cy})`} />
         <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255, 248, 230, 0.55)" strokeWidth="0.7" />
@@ -519,6 +592,7 @@ function MoonPhase({ phase = 2, onCycle }) {
       all: 'unset', cursor: 'pointer',
       position: 'absolute', top: '12%', left: '3.5%',
       width: 96,
+      pointerEvents: 'auto',
     }}>
       <div className="smallcaps" style={{ fontSize: 10, color: 'rgba(200, 156, 90, 0.85)', letterSpacing: '0.32em', textAlign: 'center', marginBottom: 8 }}>
         ✦ this moon ✦
@@ -571,6 +645,7 @@ function BrassDial({ side, label, value, setValue, min = 0, max = 12, display, s
       position: 'absolute', top: '50%', [side]: 20,
       transform: 'translateY(-50%)',
       width: 56, height: 280,
+      pointerEvents: 'auto',
       background: 'linear-gradient(90deg, rgba(200, 156, 90, 0.18), rgba(200, 156, 90, 0.05))',
       border: '1px solid rgba(200, 156, 90, 0.28)',
       borderRadius: 6,

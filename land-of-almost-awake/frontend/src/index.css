@@ -102,6 +102,53 @@ html, body {
 @keyframes seal-merge { 0% { transform: translate(-50%, -50%) scale(0); opacity: 0; } 40% { transform: translate(-50%, -50%) scale(1); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(2.4); opacity: 0; } }
 @keyframes ripple-out { 0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0.7; } 100% { transform: translate(-50%, -50%) scale(3); opacity: 0; } }
 
+/* Used by Motes — transform+opacity only, so the compositor handles it without layout/paint per frame. */
+@keyframes mote-rise {
+  0%   { transform: translateY(0);    opacity: 0; }
+  50%  { transform: translateY(-12%); opacity: 0.65; }
+  100% { transform: translateY(0);    opacity: 0; }
+}
+
+/* Outer kingdom orbs gently bob to feel alive. Lissajous-ish path so adjacent orbs
+   never visibly synchronise. Range ±4px, ~10-12s per instance (set inline per orb). */
+@keyframes orb-sway {
+  0%   { transform: translate(0px, 0px); }
+  20%  { transform: translate(3.5px, -2px); }
+  40%  { transform: translate(-1.5px, -3.5px); }
+  60%  { transform: translate(-3.5px, 1.5px); }
+  80%  { transform: translate(2px, 3px); }
+  100% { transform: translate(0px, 0px); }
+}
+/* Miveritas is bigger and sits at the centre — half the range, slower beat. */
+@keyframes orb-sway-center {
+  0%   { transform: translate(0px, 0px); }
+  33%  { transform: translate(1.8px, -1.2px); }
+  66%  { transform: translate(-1.5px, 1.5px); }
+  100% { transform: translate(0px, 0px); }
+}
+
+/* Cinematic camera — WAAPI transform on an isolated layer; astrolabe-cinematic pauses
+   filters/animations so SVG bloom does not tear during scale. */
+.camera-viewport {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  isolation: isolate;
+}
+.camera-rig {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  transform-style: flat;
+}
+.astrolabe-cinematic,
+.astrolabe-cinematic * {
+  animation-play-state: paused !important;
+}
+.astrolabe-cinematic .grain-dark {
+  opacity: 0.06 !important;
+}
+
 .screen-anim { animation: screen-in 0.55s cubic-bezier(0.22, 0.84, 0.36, 1) forwards; }
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
