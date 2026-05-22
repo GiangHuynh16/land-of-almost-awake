@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useAppStore } from '../../store/useAppStore.js'
 import { Aurora, BrassDefs, BrassRing, Motes, NebulaBackdrop, Stars, useViewport } from '../atmosphere.jsx'
 import { GLYPHS } from '../glyphs.jsx'
 import { KINGDOMS, RECENT_SEALS } from '../data.js'
@@ -54,6 +55,7 @@ function moonClip(phase) {
 
 export default function Astrolabe({ onSelectKingdom, dimExcept = null, cinematic = false }) {
   const [hover, setHover] = useState(null)
+  const user = useAppStore((s) => s.user)
   const vp = useViewport()
   const isNarrow = vp.w < 720
   const cx = 500
@@ -308,6 +310,7 @@ export default function Astrolabe({ onSelectKingdom, dimExcept = null, cinematic
 
         <AstroCompanionsRibbon />
 
+        {user?.invite_code && <InviteCodeWidget code={user.invite_code} />}
         {hover && <AstroTooltip kingdom={KINGDOMS.find(k => k.id === hover)} />}
       </div>
     </div>
@@ -821,6 +824,72 @@ function BrassAvatar({ color, glyph, offset, online }) {
         <g fill="currentColor" opacity="0.85">{GLYPHS[glyph]}</g>
       </svg>
     </div>
+  )
+}
+
+function InviteCodeWidget({ code }) {
+  const [copied, setCopied] = useState(false)
+
+  function handleCopy() {
+    navigator.clipboard.writeText(code).catch(() => {})
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2200)
+  }
+
+  return (
+    <button
+      onClick={handleCopy}
+      title="Click to copy invite code"
+      style={{
+        all: 'unset',
+        cursor: 'pointer',
+        position: 'absolute',
+        right: 22,
+        bottom: '8%',
+        pointerEvents: 'auto',
+        padding: '10px 18px',
+        background: 'linear-gradient(180deg, rgba(40, 32, 18, 0.72), rgba(20, 16, 8, 0.65))',
+        border: '1px solid rgba(200, 156, 90, 0.32)',
+        borderRadius: 4,
+        backdropFilter: 'blur(10px)',
+        textAlign: 'center',
+        transition: 'border-color 240ms ease',
+      }}
+      onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(200, 156, 90, 0.6)'}
+      onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(200, 156, 90, 0.32)'}
+    >
+      {['tl', 'tr', 'bl', 'br'].map(p => {
+        const [v, h] = p.split('')
+        return <div key={p} style={{
+          position: 'absolute',
+          [v === 't' ? 'top' : 'bottom']: -1,
+          [h === 'l' ? 'left' : 'right']: -1,
+          width: 8, height: 8,
+          [`border${v === 't' ? 'Top' : 'Bottom'}`]: '1px solid #c89c5a',
+          [`border${h === 'l' ? 'Left' : 'Right'}`]: '1px solid #c89c5a',
+        }} />
+      })}
+      <div className="smallcaps" style={{
+        fontSize: 8, letterSpacing: '0.34em',
+        color: 'rgba(200, 156, 90, 0.65)',
+        marginBottom: 6,
+      }}>
+        ✦  your portal key  ✦
+      </div>
+      <div className="mono" style={{
+        fontSize: 16, letterSpacing: '0.28em',
+        color: 'rgba(253, 228, 160, 0.92)',
+      }}>
+        {code}
+      </div>
+      <div className="mono" style={{
+        marginTop: 6, fontSize: 8, letterSpacing: '0.22em',
+        color: copied ? 'rgba(158, 212, 181, 0.9)' : 'rgba(200, 156, 90, 0.45)',
+        transition: 'color 220ms ease',
+      }}>
+        {copied ? 'COPIED ✦' : 'CLICK TO COPY'}
+      </div>
+    </button>
   )
 }
 
