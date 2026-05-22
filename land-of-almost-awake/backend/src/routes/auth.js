@@ -102,5 +102,12 @@ authRouter.post('/login', async (req, res) => {
     { expiresIn: '30d' }
   )
   const { password_hash, ...safeUser } = user
-  res.json({ token, user: safeUser })
+
+  const { data: workspace } = await supabase
+    .from('workspaces')
+    .select('invite_code')
+    .eq('id', user.workspace_id)
+    .single()
+
+  res.json({ token, user: { ...safeUser, invite_code: workspace?.invite_code ?? null } })
 })

@@ -15,7 +15,7 @@ export default function Signup() {
     setError('')
     try {
       const data = await api.signup(form)
-      setAuth(data.token, data.user)
+      setAuth(data.token, { ...data.user, invite_code: data.invite_code })
       setInviteCode(data.invite_code)
     } catch (err) {
       setError(err.message)
