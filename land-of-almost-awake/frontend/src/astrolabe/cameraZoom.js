@@ -22,13 +22,10 @@ export function zoomScaleForOrb(size = 48) {
   return Math.min((cover / Math.max(size, 24)) * 0.55, 9)
 }
 
-function scaleTransform(s) {
-  return `translate3d(0, 0, 0) scale3d(${s}, ${s}, 1)`
-}
-
-export function setCameraAt(cameraEl, anchor, scale) {
+function setCameraAt(cameraEl, anchor, scale) {
+  if (!cameraEl) return
   cameraEl.style.transformOrigin = `${anchor.x}px ${anchor.y}px`
-  cameraEl.style.transform = scaleTransform(scale)
+  cameraEl.style.transform = `translate3d(0, 0, 0) scale3d(${scale}, ${scale}, 1)`
 }
 
 export function resetCamera(cameraEl) {
@@ -45,7 +42,6 @@ export function runDiveZoom(cameraEl, anchor, maxScale, { onComplete } = {}) {
   const tl = createTimeline({
     autoplay: true,
     onComplete: () => {
-      setCameraAt(cameraEl, anchor, maxScale)
       cameraEl.style.willChange = 'auto'
       onComplete?.()
     },
