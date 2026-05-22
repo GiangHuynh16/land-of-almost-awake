@@ -1,11 +1,8 @@
 import { createTimeline, cubicBezier } from 'animejs'
 
-export const DIVE_HOLD_MS = 1000
-export const DIVE_SNAP_MS = 520
-export const DIVE_MS = DIVE_HOLD_MS + DIVE_SNAP_MS
+export const DIVE_MS = 620
 
-const EASE_HEAVY = 'linear'
-const EASE_SNAP = cubicBezier(0.84, 0, 1, 0.28)
+const EASE_DIVE = cubicBezier(0.4, 0, 0.2, 1)   // material standard — smooth in+out
 
 export function anchorInCamera(cameraEl, viewportOrigin) {
   const cam = cameraEl.getBoundingClientRect()
@@ -20,8 +17,9 @@ export function anchorInCamera(cameraEl, viewportOrigin) {
 }
 
 export function zoomScaleForOrb(size = 48) {
+  // Cap at 9× — enough to fill the screen without noticeable pixel blur
   const cover = Math.max(window.innerWidth, window.innerHeight)
-  return Math.min((cover / Math.max(size, 16)) * 1.02, 28)
+  return Math.min((cover / Math.max(size, 24)) * 0.55, 9)
 }
 
 function scaleTransform(s) {
@@ -54,15 +52,10 @@ export function runDiveZoom(cameraEl, anchor, maxScale, { onComplete } = {}) {
   })
 
   tl.add(cameraEl, {
-    scale: [1, 1.035],
-    duration: DIVE_HOLD_MS,
-    ease: EASE_HEAVY,
+    scale: [1, maxScale],
+    duration: DIVE_MS,
+    ease: EASE_DIVE,
   }, 0)
-  tl.add(cameraEl, {
-    scale: [1.035, maxScale],
-    duration: DIVE_SNAP_MS,
-    ease: EASE_SNAP,
-  }, DIVE_HOLD_MS)
 
   return {
     cancel: () => {
