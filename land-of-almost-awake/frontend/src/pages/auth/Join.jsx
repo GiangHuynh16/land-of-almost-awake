@@ -22,46 +22,66 @@ export default function Join() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center h-full gap-6 p-8">
-      <h1 className="text-2xl font-bold">Join the journey</h1>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-sm">
+    <div className="auth-shell">
+      <div style={{ textAlign: 'center', marginBottom: 28 }}>
+        <div style={{ fontSize: 28, color: 'rgba(200, 156, 90, 0.75)', marginBottom: 12, lineHeight: 1 }}>☽</div>
+        <div className="serif" style={{ fontSize: 28, fontStyle: 'italic', color: 'var(--ink)', lineHeight: 1.1 }}>
+          Join the journey
+        </div>
+        <div className="mono" style={{ marginTop: 8, fontSize: 9, letterSpacing: '0.38em', color: 'rgba(200, 156, 90, 0.65)' }}>
+          ENTER YOUR COMPANION'S CODE
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%', maxWidth: 340 }}>
         <input
-          className="bg-stone-800 border border-stone-600 rounded px-4 py-2 text-amber-100 placeholder-stone-500"
-          placeholder="Your name"
+          className="auth-input"
+          placeholder="your name"
           value={form.display_name}
           onChange={(e) => setForm({ ...form, display_name: e.target.value })}
           required
         />
         <input
+          className="auth-input"
           type="email"
-          className="bg-stone-800 border border-stone-600 rounded px-4 py-2 text-amber-100 placeholder-stone-500"
-          placeholder="Email"
+          placeholder="your email"
           value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
           required
         />
         <input
+          className="auth-input"
           type="password"
-          className="bg-stone-800 border border-stone-600 rounded px-4 py-2 text-amber-100 placeholder-stone-500"
-          placeholder="Password"
+          placeholder="password"
           value={form.password}
           onChange={(e) => setForm({ ...form, password: e.target.value })}
           required
         />
         <input
-          className="bg-stone-800 border border-stone-600 rounded px-4 py-2 text-amber-100 placeholder-stone-500 uppercase tracking-widest"
-          placeholder="Invite code"
+          className="auth-input"
+          placeholder="invite code"
           value={form.invite_code}
           onChange={(e) => setForm({ ...form, invite_code: e.target.value.toUpperCase() })}
+          style={{ letterSpacing: '0.28em', textTransform: 'uppercase' }}
           required
         />
-        {error && <p className="text-red-400 text-sm">{error}</p>}
-        <button type="submit" className="bg-amber-700 hover:bg-amber-600 rounded py-2 transition-colors">
+        {error && (
+          <p className="mono" style={{ fontSize: 10, color: 'rgba(228, 137, 200, 0.85)', letterSpacing: '0.18em', textAlign: 'center', margin: 0 }}>
+            {error}
+          </p>
+        )}
+        <button type="submit" className="auth-btn" style={{ marginTop: 4 }}>
           Join workspace
         </button>
       </form>
-      <p className="text-stone-400 text-sm">
-        No code? <Link to="/auth/signup" className="text-amber-400 hover:underline">Create a new world</Link>
+
+      <p className="mono" style={{ marginTop: 22, fontSize: 10, letterSpacing: '0.22em', color: 'rgba(200, 156, 90, 0.55)', textAlign: 'center' }}>
+        No code?{' '}
+        <Link to="/auth/signup" style={{ color: 'rgba(200, 156, 90, 0.9)', textDecoration: 'none' }}
+          onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+          onMouseLeave={(e) => e.target.style.textDecoration = 'none'}>
+          Create a new world
+        </Link>
       </p>
     </div>
   )

@@ -22,32 +22,51 @@ export default function Login() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center h-full gap-6 p-8">
-      <h1 className="text-2xl font-bold">Return to the world</h1>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-sm">
+    <div className="auth-shell">
+      <div style={{ textAlign: 'center', marginBottom: 32 }}>
+        <div style={{ fontSize: 28, color: 'rgba(200, 156, 90, 0.75)', marginBottom: 12, lineHeight: 1 }}>☽</div>
+        <div className="serif" style={{ fontSize: 28, fontStyle: 'italic', color: 'var(--ink)', lineHeight: 1.1 }}>
+          Return to the world
+        </div>
+        <div className="mono" style={{ marginTop: 8, fontSize: 9, letterSpacing: '0.38em', color: 'rgba(200, 156, 90, 0.65)' }}>
+          THE LAND OF ALMOST AWAKE
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%', maxWidth: 340 }}>
         <input
+          className="auth-input"
           type="email"
-          className="bg-stone-800 border border-stone-600 rounded px-4 py-2 text-amber-100 placeholder-stone-500"
-          placeholder="Email"
+          placeholder="your email"
           value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
           required
         />
         <input
+          className="auth-input"
           type="password"
-          className="bg-stone-800 border border-stone-600 rounded px-4 py-2 text-amber-100 placeholder-stone-500"
-          placeholder="Password"
+          placeholder="password"
           value={form.password}
           onChange={(e) => setForm({ ...form, password: e.target.value })}
           required
         />
-        {error && <p className="text-red-400 text-sm">{error}</p>}
-        <button type="submit" className="bg-amber-700 hover:bg-amber-600 rounded py-2 transition-colors">
+        {error && (
+          <p className="mono" style={{ fontSize: 10, color: 'rgba(228, 137, 200, 0.85)', letterSpacing: '0.18em', textAlign: 'center', margin: 0 }}>
+            {error}
+          </p>
+        )}
+        <button type="submit" className="auth-btn" style={{ marginTop: 4 }}>
           Enter
         </button>
       </form>
-      <p className="text-stone-400 text-sm">
-        New here? <Link to="/auth/signup" className="text-amber-400 hover:underline">Begin your journey</Link>
+
+      <p className="mono" style={{ marginTop: 22, fontSize: 10, letterSpacing: '0.22em', color: 'rgba(200, 156, 90, 0.55)', textAlign: 'center' }}>
+        New here?{' '}
+        <Link to="/auth/signup" style={{ color: 'rgba(200, 156, 90, 0.9)', textDecoration: 'none' }}
+          onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+          onMouseLeave={(e) => e.target.style.textDecoration = 'none'}>
+          Begin your journey
+        </Link>
       </p>
     </div>
   )

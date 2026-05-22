@@ -24,15 +24,31 @@ export default function Signup() {
 
   if (inviteCode) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-6 p-8 text-center">
-        <h1 className="text-2xl font-bold">Your journey begins</h1>
-        <p className="text-amber-200">Share this code with your companion:</p>
-        <div className="text-4xl font-mono tracking-widest bg-amber-900/40 px-8 py-4 rounded-lg border border-amber-700">
+      <div className="auth-shell" style={{ textAlign: 'center' }}>
+        <div style={{ fontSize: 28, color: 'rgba(200, 156, 90, 0.75)', marginBottom: 12 }}>☽</div>
+        <div className="serif" style={{ fontSize: 26, fontStyle: 'italic', color: 'var(--ink)', lineHeight: 1.2 }}>
+          Your journey begins
+        </div>
+        <div className="mono" style={{ marginTop: 10, fontSize: 9, letterSpacing: '0.34em', color: 'rgba(200, 156, 90, 0.6)' }}>
+          SHARE THIS CODE WITH YOUR COMPANION
+        </div>
+        <div style={{
+          marginTop: 28,
+          padding: '18px 36px',
+          background: 'rgba(7, 9, 30, 0.7)',
+          border: '1px solid rgba(200, 156, 90, 0.5)',
+          borderRadius: 4,
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 32,
+          letterSpacing: '0.3em',
+          color: 'var(--brass-light)',
+        }}>
           {inviteCode}
         </div>
         <button
           onClick={() => navigate('/')}
-          className="mt-4 px-6 py-2 bg-amber-700 hover:bg-amber-600 rounded-lg transition-colors"
+          className="auth-btn"
+          style={{ marginTop: 28, maxWidth: 260 }}
         >
           Enter the world
         </button>
@@ -41,50 +57,71 @@ export default function Signup() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center h-full gap-6 p-8">
-      <h1 className="text-2xl font-bold">Begin your journey</h1>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-sm">
+    <div className="auth-shell">
+      <div style={{ textAlign: 'center', marginBottom: 28 }}>
+        <div style={{ fontSize: 28, color: 'rgba(200, 156, 90, 0.75)', marginBottom: 12, lineHeight: 1 }}>☽</div>
+        <div className="serif" style={{ fontSize: 28, fontStyle: 'italic', color: 'var(--ink)', lineHeight: 1.1 }}>
+          Begin your journey
+        </div>
+        <div className="mono" style={{ marginTop: 8, fontSize: 9, letterSpacing: '0.38em', color: 'rgba(200, 156, 90, 0.65)' }}>
+          THE LAND OF ALMOST AWAKE
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%', maxWidth: 340 }}>
         <input
-          className="bg-stone-800 border border-stone-600 rounded px-4 py-2 text-amber-100 placeholder-stone-500"
-          placeholder="Your name"
+          className="auth-input"
+          placeholder="your name"
           value={form.display_name}
           onChange={(e) => setForm({ ...form, display_name: e.target.value })}
           required
         />
         <input
+          className="auth-input"
           type="email"
-          className="bg-stone-800 border border-stone-600 rounded px-4 py-2 text-amber-100 placeholder-stone-500"
-          placeholder="Email"
+          placeholder="your email"
           value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
           required
         />
         <input
+          className="auth-input"
           type="password"
-          className="bg-stone-800 border border-stone-600 rounded px-4 py-2 text-amber-100 placeholder-stone-500"
-          placeholder="Password"
+          placeholder="password"
           value={form.password}
           onChange={(e) => setForm({ ...form, password: e.target.value })}
           required
         />
-        <div className="flex flex-col gap-1">
-          <label className="text-sm text-stone-400">Achievements to unlock each kingdom (1–50)</label>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div className="mono" style={{ fontSize: 9, letterSpacing: '0.28em', color: 'rgba(200, 156, 90, 0.55)', paddingLeft: 16 }}>
+            ACHIEVEMENTS TO UNLOCK EACH KINGDOM (1–50)
+          </div>
           <input
+            className="auth-input"
             type="number"
             min="1"
             max="50"
-            className="bg-stone-800 border border-stone-600 rounded px-4 py-2 text-amber-100"
             value={form.achievement_threshold}
             onChange={(e) => setForm({ ...form, achievement_threshold: parseInt(e.target.value) || 10 })}
           />
         </div>
-        {error && <p className="text-red-400 text-sm">{error}</p>}
-        <button type="submit" className="bg-amber-700 hover:bg-amber-600 rounded py-2 transition-colors">
+        {error && (
+          <p className="mono" style={{ fontSize: 10, color: 'rgba(228, 137, 200, 0.85)', letterSpacing: '0.18em', textAlign: 'center', margin: 0 }}>
+            {error}
+          </p>
+        )}
+        <button type="submit" className="auth-btn" style={{ marginTop: 4 }}>
           Create workspace
         </button>
       </form>
-      <p className="text-stone-400 text-sm">
-        Have an invite code? <Link to="/auth/join" className="text-amber-400 hover:underline">Join here</Link>
+
+      <p className="mono" style={{ marginTop: 22, fontSize: 10, letterSpacing: '0.22em', color: 'rgba(200, 156, 90, 0.55)', textAlign: 'center' }}>
+        Have an invite code?{' '}
+        <Link to="/auth/join" style={{ color: 'rgba(200, 156, 90, 0.9)', textDecoration: 'none' }}
+          onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+          onMouseLeave={(e) => e.target.style.textDecoration = 'none'}>
+          Join here
+        </Link>
       </p>
     </div>
   )
