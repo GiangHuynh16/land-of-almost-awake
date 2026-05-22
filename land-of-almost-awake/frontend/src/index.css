@@ -219,3 +219,5 @@ html, body {
   background: rgba(200, 156, 90, 0.32);
   border-color: rgba(200, 156, 90, 0.75);
 }
+.auth-nav-link { color: rgba(200, 156, 90, 0.9); text-decoration: none; }
+.auth-nav-link:hover { text-decoration: underline; }

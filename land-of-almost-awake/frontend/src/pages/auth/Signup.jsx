@@ -117,11 +117,7 @@ export default function Signup() {
 
       <p className="mono" style={{ marginTop: 22, fontSize: 10, letterSpacing: '0.22em', color: 'rgba(200, 156, 90, 0.55)', textAlign: 'center' }}>
         Have an invite code?{' '}
-        <Link to="/auth/join" style={{ color: 'rgba(200, 156, 90, 0.9)', textDecoration: 'none' }}
-          onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
-          onMouseLeave={(e) => e.target.style.textDecoration = 'none'}>
-          Join here
-        </Link>
+        <Link to="/auth/join" className="auth-nav-link">Join here</Link>
       </p>
     </div>
   )

@@ -62,11 +62,7 @@ export default function Login() {
 
       <p className="mono" style={{ marginTop: 22, fontSize: 10, letterSpacing: '0.22em', color: 'rgba(200, 156, 90, 0.55)', textAlign: 'center' }}>
         New here?{' '}
-        <Link to="/auth/signup" style={{ color: 'rgba(200, 156, 90, 0.9)', textDecoration: 'none' }}
-          onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
-          onMouseLeave={(e) => e.target.style.textDecoration = 'none'}>
-          Begin your journey
-        </Link>
+        <Link to="/auth/signup" className="auth-nav-link">Begin your journey</Link>
       </p>
     </div>
   )
