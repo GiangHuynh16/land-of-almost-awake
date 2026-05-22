@@ -12,15 +12,19 @@ export function SealSlot({
   onSeal,
   disabled = false,
   label,
-  pickerDir = 'up',
 }) {
   const [pickerAnchor, setPickerAnchor] = useState(null)
   const [stage, setStage] = useState('idle')
   const [picked, setPicked] = useState(null)
   const timers = useRef([])
-  const slotRef = useRef(null)
+  // Shared close-timer — both SealButton and StampPicker use the same one so
+  // entering the picker always cancels the button's pending close.
+  const closeTimer = useRef(null)
 
-  useEffect(() => () => timers.current.forEach(clearTimeout), [])
+  useEffect(() => () => {
+    timers.current.forEach(clearTimeout)
+    clearTimeout(closeTimer.current)
+  }, [])
 
   function runCeremony(glyph) {
     setPickerAnchor(null)
@@ -87,6 +91,7 @@ export function SealSlot({
           <SealButton
             color={color}
             disabled={disabled}
+            closeTimer={closeTimer}
             onOpenPicker={(rect) => setPickerAnchor(rect)}
             onClosePicker={() => setPickerAnchor(null)}
           />
@@ -157,6 +162,7 @@ export function SealSlot({
           onClose={() => setPickerAnchor(null)}
           anchor={pickerAnchor}
           size={size}
+          closeTimer={closeTimer}
         />,
         document.body
       )}
@@ -235,9 +241,8 @@ function WaxBlob({ color }) {
   )
 }
 
-function SealButton({ color, disabled, onOpenPicker, onClosePicker }) {
+function SealButton({ color, disabled, closeTimer, onOpenPicker, onClosePicker }) {
   const ref = useRef(null)
-  const closeTimer = useRef(null)
 
   function openPicker() {
     if (disabled) return
@@ -275,8 +280,7 @@ function SealButton({ color, disabled, onOpenPicker, onClosePicker }) {
   )
 }
 
-function StampPicker({ color, stamps, onPick, onClose, anchor, size = 56 }) {
-  const closeTimer = useRef(null)
+function StampPicker({ color, stamps, onPick, onClose, anchor, size = 56, closeTimer }) {
   const n = stamps.length
   const radius = size * 1.55
 
@@ -287,6 +291,8 @@ function StampPicker({ color, stamps, onPick, onClose, anchor, size = 56 }) {
   const start = -90 - arc / 2   // always open upward
 
   function cancelClose() {
+    // Cancel the shared timer — this is the same timer SealButton scheduled,
+    // so moving from button → picker no longer closes the picker.
     clearTimeout(closeTimer.current)
   }
   function scheduleClose() {
