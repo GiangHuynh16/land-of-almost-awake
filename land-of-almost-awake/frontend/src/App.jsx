@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAppStore } from './store/useAppStore.js'
 import { useRealtimeSync } from './hooks/useRealtimeSync.js'
@@ -11,6 +11,7 @@ import CinematicStage from './astrolabe/CinematicStage.jsx'
 const Signup = lazy(() => import('./pages/auth/Signup.jsx'))
 const Join = lazy(() => import('./pages/auth/Join.jsx'))
 const Login = lazy(() => import('./pages/auth/Login.jsx'))
+const PartnerMap = lazy(() => import('./pages/PartnerMap.jsx'))
 const CinematicUnlock = lazy(() => import('./components/CinematicUnlock.jsx').then(m => ({ default: m.CinematicUnlock })))
 const FinalCompletion = lazy(() => import('./components/FinalCompletion.jsx').then(m => ({ default: m.FinalCompletion })))
 
@@ -23,8 +24,16 @@ export default function App() {
   const user = useAppStore((s) => s.user)
   const pendingUnlock = useAppStore((s) => s.pendingUnlock)
   const journeyComplete = useAppStore((s) => s.journeyComplete)
+  const loadPartner = useAppStore((s) => s.loadPartner)
+  const loadPartnerKingdoms = useAppStore((s) => s.loadPartnerKingdoms)
 
   useRealtimeSync(user?.workspace_id)
+
+  useEffect(() => {
+    if (!user) return
+    loadPartner()
+    loadPartnerKingdoms()
+  }, [user?.id])
 
   return (
     <>
@@ -33,6 +42,7 @@ export default function App() {
           <Route path="/auth/signup" element={<Signup />} />
           <Route path="/auth/join" element={<Join />} />
           <Route path="/auth/login" element={<Login />} />
+          <Route path="/partner" element={<AuthGuard><PartnerMap /></AuthGuard>} />
           {/* Stage handles both '/' and '/kingdom/:id' to keep camera continuity. */}
           <Route path="/*" element={<AuthGuard><CinematicStage /></AuthGuard>} />
         </Routes>

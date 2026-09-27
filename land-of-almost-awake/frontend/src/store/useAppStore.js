@@ -9,6 +9,7 @@ export const useAppStore = create((set, get) => ({
 
   // Data
   kingdoms: [],
+  partnerKingdoms: [],
   achievements: [],
   activeKingdomId: null,
 
@@ -33,6 +34,24 @@ export const useAppStore = create((set, get) => ({
 
   setPartner(partner) {
     set({ partner })
+  },
+
+  async loadPartner() {
+    try {
+      const data = await api.getPartner()
+      set({ partner: data.partner })
+    } catch {
+      // workspace may only have one user yet — ignore
+    }
+  },
+
+  async loadPartnerKingdoms() {
+    try {
+      const kingdoms = await api.getPartnerKingdoms()
+      set({ partnerKingdoms: kingdoms })
+    } catch {
+      set({ partnerKingdoms: [] })
+    }
   },
 
   async loadKingdoms() {

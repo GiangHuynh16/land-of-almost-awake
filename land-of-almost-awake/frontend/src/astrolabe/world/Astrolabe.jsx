@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '../../store/useAppStore.js'
 import { Aurora, BrassDefs, BrassRing, Motes, NebulaBackdrop, Stars, useViewport } from '../atmosphere.jsx'
 import { GLYPHS } from '../glyphs.jsx'
@@ -56,6 +57,7 @@ function moonClip(phase) {
 export default function Astrolabe({ onSelectKingdom, dimExcept = null, cinematic = false }) {
   const [hover, setHover] = useState(null)
   const user = useAppStore((s) => s.user)
+  const partner = useAppStore((s) => s.partner)
   const vp = useViewport()
   const isNarrow = vp.w < 720
   const cx = 500
@@ -245,6 +247,8 @@ export default function Astrolabe({ onSelectKingdom, dimExcept = null, cinematic
           onHover={() => setHover('miveritas')}
           onLeave={() => setHover(null)}
           cinematic={cinematic}
+          myName={user?.display_name || 'me'}
+          partnerName={partner?.display_name || 'partner'}
           onOpen={(e) => openKingdom('miveritas', e)} />
 
         {[0, 90, 180, 270].map(deg => {
@@ -264,7 +268,9 @@ export default function Astrolabe({ onSelectKingdom, dimExcept = null, cinematic
           <text x="40" y="58" fontFamily="'JetBrains Mono', monospace" fontSize="8" fill="#c89c5a" letterSpacing="2.5">FOR · USE · AT · THE · EDGE · OF · SLEEP</text>
           <text x="960" y="42" textAnchor="end" fontFamily="'Cormorant Unicase', serif" fontSize="11" fill="#c89c5a" letterSpacing="3">ANNO · LUNÆ · III</text>
           <text x="960" y="58" textAnchor="end" fontFamily="'JetBrains Mono', monospace" fontSize="8" fill="#c89c5a" letterSpacing="2.5">SEPTIMANA · XII</text>
-          <text x="40" y="700" fontFamily="'JetBrains Mono', monospace" fontSize="8" fill="#c89c5a" letterSpacing="2.5">ELSA · GRANNY · CARTOGRAPHI</text>
+          <text x="40" y="700" fontFamily="'JetBrains Mono', monospace" fontSize="8" fill="#c89c5a" letterSpacing="2.5">
+            {user?.display_name ? `${user.display_name.toUpperCase()} · CARTOGRAPHI` : 'CARTOGRAPHI'}
+          </text>
           <text x="960" y="700" textAnchor="end" fontFamily="'JetBrains Mono', monospace" fontSize="8" fill="#c89c5a" letterSpacing="2.5">SIGILLIS · XIII · CUSTODITIS · IV</text>
         </g>
       </svg>
@@ -477,7 +483,7 @@ function AstroKingdom({ k, cx, cy, angle, hovered, dimmed, cinematic, swayIndex 
   )
 }
 
-function AstroMiveritas({ cx, cy, k, hovered, dimmed, cinematic, onHover, onLeave, onOpen }) {
+function AstroMiveritas({ cx, cy, k, hovered, dimmed, cinematic, onHover, onLeave, onOpen, myName = 'me', partnerName = 'partner' }) {
   const r = 50
   return (
     <g style={{
@@ -564,7 +570,7 @@ function AstroMiveritas({ cx, cy, k, hovered, dimmed, cinematic, onHover, onLeav
       </text>
       <text x={cx} y={cy + r + 70} textAnchor="middle"
         fontFamily="'JetBrains Mono', monospace" fontSize="8" fill="#c89c5a" letterSpacing="3" opacity="0.7">
-        ELSA · {k.sealed}/{k.total}    GRANNY · {k.sealedOther}/{k.total}
+        {myName.toUpperCase()} · {k.sealed}/{k.total}    {partnerName.toUpperCase()} · {k.sealedOther}/{k.total}
       </text>
 
       {hovered && (
@@ -775,8 +781,13 @@ function DayLedger({ day, entries }) {
 }
 
 function AstroCompanionsRibbon() {
-  const profile = { name: 'Elsa', color: '#ecc36a', sigil: 'moth' }
-  const partnerOnline = true
+  const user = useAppStore((s) => s.user)
+  const partner = useAppStore((s) => s.partner)
+  const navigate = useNavigate()
+
+  const myName = user?.display_name || '—'
+  const partnerName = partner?.display_name || null
+
   return (
     <div style={{
       position: 'absolute', left: '50%', bottom: '4.5%',
@@ -790,41 +801,79 @@ function AstroCompanionsRibbon() {
       backdropFilter: 'blur(10px)',
       whiteSpace: 'nowrap',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center' }}>
-        <BrassAvatar color={profile.color} glyph={profile.sigil} online />
-        <BrassAvatar color="#b8a8e4" glyph="spiral" offset online={partnerOnline} />
+      <div style={{ display: 'flex', alignItems: 'center', pointerEvents: 'auto' }}>
+        {/* My avatar — highlighted with a ring */}
+        <BrassAvatar color="#ecc36a" glyph="moth" online isMe />
+        {/* Partner avatar — clickable */}
+        {partnerName && (
+          <BrassAvatar
+            color="#b8a8e4" glyph="spiral" offset online
+            onClick={() => navigate('/partner')}
+            title={`View ${partnerName}'s map`}
+          />
+        )}
       </div>
       <div>
         <div className="serif" style={{ fontSize: 14, fontStyle: 'italic', color: 'rgba(243, 236, 217, 0.92)', lineHeight: 1 }}>
-          {profile.name} <span style={{ color: 'rgba(200, 156, 90, 0.7)' }}>·</span> Granny
-          <span style={{ color: 'rgba(243, 236, 217, 0.55)', fontStyle: 'normal', fontSize: 12 }}> — {partnerOnline ? 'both awake' : 'Granny asleep'}</span>
+          <span style={{ color: 'rgba(253, 228, 160, 0.95)' }}>{myName}</span>
+          {partnerName && (
+            <>
+              {' '}<span style={{ color: 'rgba(200, 156, 90, 0.7)' }}>·</span>{' '}
+              <button
+                onClick={() => navigate('/partner')}
+                style={{
+                  all: 'unset', cursor: 'pointer',
+                  color: 'rgba(243, 236, 217, 0.75)',
+                  fontFamily: "'Cormorant Garamond', serif",
+                  fontSize: 14, fontStyle: 'italic',
+                  textDecoration: 'underline', textDecorationColor: 'rgba(184, 168, 228, 0.45)',
+                }}
+              >
+                {partnerName}
+              </button>
+            </>
+          )}
         </div>
         <div className="mono" style={{ fontSize: 7.5, color: 'rgba(200, 156, 90, 0.8)', letterSpacing: '0.22em', marginTop: 3 }}>
-          SIGILLIS · XIII · CUSTODITIS · IV
+          {partnerName
+            ? `✦  ${myName.toUpperCase()} · ${partnerName.toUpperCase()} · COMPANIONS`
+            : `✦  AWAITING COMPANION  ✦`}
         </div>
       </div>
     </div>
   )
 }
 
-function BrassAvatar({ color, glyph, offset, online }) {
-  return (
+function BrassAvatar({ color, glyph, offset, online, isMe, onClick, title }) {
+  const inner = (
     <div style={{
       position: 'relative', width: 32, height: 32, borderRadius: '50%',
       marginLeft: offset ? -10 : 0,
       background: `radial-gradient(circle at 35% 30%, ${lighten(color, 0.35)}, ${color} 55%, ${darken(color, 0.3)})`,
-      border: '1.5px solid #c89c5a',
+      border: isMe ? '2px solid #fde4a0' : '1.5px solid #c89c5a',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      boxShadow: online ? `0 0 10px ${color}66` : '0 0 0 1px rgba(200, 156, 90, 0.3)',
+      boxShadow: isMe
+        ? `0 0 12px ${color}88, 0 0 0 2px rgba(253, 228, 160, 0.35)`
+        : online ? `0 0 10px ${color}66` : '0 0 0 1px rgba(200, 156, 90, 0.3)',
       color: darken(color, 0.5),
       opacity: online ? 1 : 0.55,
       filter: online ? undefined : 'saturate(0.4)',
+      cursor: onClick ? 'pointer' : 'default',
+      transition: 'box-shadow 200ms ease',
     }}>
       <svg viewBox="0 0 100 100" width="14" height="14">
         <g fill="currentColor" opacity="0.85">{GLYPHS[glyph]}</g>
       </svg>
     </div>
   )
+  if (onClick) {
+    return (
+      <button onClick={onClick} title={title} style={{ all: 'unset' }}>
+        {inner}
+      </button>
+    )
+  }
+  return inner
 }
 
 function InviteCodeWidget({ code }) {

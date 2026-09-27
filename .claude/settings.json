@@ -27,11 +27,14 @@
       "Bash(git filter-branch *)",
       "Bash(git stash *)",
       "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch --force --index-filter 'git rm --cached --ignore-unmatch land-of-almost-awake/backend/.env land-of-almost-awake/frontend/.env' --prune-empty --tag-name-filter cat -- --all)",
-      "Bash(git ls-tree *)"
+      "Bash(git ls-tree *)",
+      "Bash(mkdir -p /Users/hagiang/Workspace/proj/AchievementTracking/docs/superpowers/plans)",
+      "Bash(npx vite *)"
     ],
     "additionalDirectories": [
       "/Users/hagiang/Workspace/proj/AchievementTracking",
-      "/Users/hagiang/Workspace/proj/AchievementTracking/docs/superpowers"
+      "/Users/hagiang/Workspace/proj/AchievementTracking/docs/superpowers",
+      "/Users/hagiang/Workspace/proj/AchievementTracking/docs/superpowers/plans"
     ]
   }
 }
