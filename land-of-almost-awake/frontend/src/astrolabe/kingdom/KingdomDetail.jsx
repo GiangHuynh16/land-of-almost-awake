@@ -4,6 +4,7 @@ import { Aurora, BrassDefs, Motes, NebulaBackdrop, Stars } from '../atmosphere.j
 import { darken } from '../colors.js'
 import { DEEDS_BY_KINGDOM, KINGDOMS, MIVERITAS_DEEDS, placeholderFor } from '../data.js'
 import { RotatingPlanet } from './RotatingPlanet.jsx'
+import { useAppStore } from '../../store/useAppStore.js'
 import {
   MiveritasStarlog,
   MiveritasTarot,
@@ -20,6 +21,11 @@ export default function KingdomDetail({ kingdomId: kingdomIdProp, onBack }) {
   const kingdom = KINGDOMS.find(x => x.id === id)
   const isMiveritas = id === 'miveritas'
 
+  const storeUser = useAppStore((s) => s.user)
+  const storePartner = useAppStore((s) => s.partner)
+  const myName = storeUser?.display_name || 'me'
+  const partnerName = storePartner?.display_name || 'partner'
+
   const handleBack = onBack || (() => navigate('/'))
 
   const [view, setView] = useState('starlog')
@@ -27,8 +33,8 @@ export default function KingdomDetail({ kingdomId: kingdomIdProp, onBack }) {
   const [draft, setDraft] = useState('')
   const [draftNote, setDraftNote] = useState('')
   const [showNote, setShowNote] = useState(false)
-  const [who, setWho] = useState('Elsa')
-  const [perspective, setPerspective] = useState('elsa')
+  const [who, setWho] = useState(myName)
+  const [perspective, setPerspective] = useState('me')
 
   const [deedsByK, setDeedsByK] = useState(() => {
     const copy = {}
@@ -169,7 +175,7 @@ export default function KingdomDetail({ kingdomId: kingdomIdProp, onBack }) {
 
           <div className="k-controls" style={{ marginTop: 22, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
             <ViewToggle view={view} setView={setView} kingdom={kingdom} isMiveritas={isMiveritas} />
-            {isMiveritas && <PerspectiveToggle perspective={perspective} setPerspective={setPerspective} />}
+            {isMiveritas && <PerspectiveToggle perspective={perspective} setPerspective={setPerspective} myName={myName} partnerName={partnerName} />}
           </div>
 
           <div style={{
@@ -183,12 +189,12 @@ export default function KingdomDetail({ kingdomId: kingdomIdProp, onBack }) {
               }}>
                 {view === 'starlog'
                   ? (isMiveritas
-                    ? <MiveritasStarlog deeds={deeds} perspective={perspective} onSeal={sealVeritas} />
+                    ? <MiveritasStarlog deeds={deeds} perspective={perspective} onSeal={sealVeritas} myName={myName} partnerName={partnerName} />
                     : (deeds.length === 0
                       ? <EmptyKingdom kingdom={kingdom} />
                       : <Starlog deeds={deeds} kingdom={kingdom} onSeal={sealDeed} onUnseal={unsealDeed} />))
                   : (isMiveritas
-                    ? <MiveritasTarot deeds={deeds} perspective={perspective} onSeal={sealVeritas} />
+                    ? <MiveritasTarot deeds={deeds} perspective={perspective} onSeal={sealVeritas} myName={myName} partnerName={partnerName} />
                     : (deeds.length === 0
                       ? <EmptyKingdom kingdom={kingdom} />
                       : <Tarot deeds={deeds} kingdom={kingdom} onSeal={sealDeed} onUnseal={unsealDeed} />))}
@@ -265,7 +271,7 @@ export default function KingdomDetail({ kingdomId: kingdomIdProp, onBack }) {
                           <div style={{ width: 1, height: 10, background: 'rgba(200, 156, 90, 0.2)' }} />
                           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                             <span className="mono" style={{ fontSize: 8, letterSpacing: '0.22em', color: 'rgba(200, 156, 90, 0.55)' }}>WHO:</span>
-                            {['Elsa', 'Granny'].map(name => (
+                            {[myName, partnerName].map(name => (
                               <button key={name} onClick={() => setWho(name)} style={{
                                 all: 'unset', cursor: 'pointer',
                                 padding: '2px 8px', borderRadius: 999,

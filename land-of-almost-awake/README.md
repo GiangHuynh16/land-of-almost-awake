@@ -1,45 +1,40 @@
-# Adventure Passport
+# Land-of-Almost-Awake
 
-A cozy two-user gamified web app for tracking shared weekly achievements. Claim stamps, fill your passport, unlock milestone cinematics.
+A two-user achievement tracker inspired by *My Grandmother Sends Her Regards and Apologises* (Fredrik Backman). Two close friends explore a shared fantasy world — 6 personal kingdoms unlocked by completing achievements, plus a 7th shared kingdom (Miveritas) at the center.
 
 ## Stack
 
 | Layer | Tech |
 |-------|------|
-| Frontend | React (Vite) + Tailwind CSS + Zustand |
-| Backend | Node.js + Express |
-| Database & Realtime | Supabase (PostgreSQL + Realtime) |
-| Deploy | Vercel (frontend) + Railway/Render (backend) |
+| Frontend | React 19 (Vite) + Tailwind CSS 3 + Zustand 5 + React Router 7 |
+| Backend | Node.js 20 (ESM) + Express 5 |
+| Database & Realtime | Supabase (PostgreSQL + Realtime Broadcast) |
+
+## How it works
+
+- Each user has their **own 6 kingdoms** with independent progression
+- Complete achievements to unlock kingdoms one by one (threshold configurable, default 10)
+- Both users can **view each other's map** — partner's kingdoms are read-only
+- **Miveritas** (7th kingdom, center of map) is always active and fully shared — both users can add/complete/delete freely
+- Cinematic animation plays when a kingdom is unlocked
 
 ## Project structure
 
 ```
-adventure-passport/
+land-of-almost-awake/
 ├── frontend/               # Vite React app
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── ui/         # Avatar, Icons
-│   │   │   ├── layout/     # TopBar
-│   │   │   ├── journey/    # JourneyMap, JourneyDetail, JourneyNode, ItemCard, ActivityFeed
-│   │   │   ├── passport/   # PassportBook
-│   │   │   ├── claim/      # ClaimOverlay
-│   │   │   ├── milestone/  # MilestoneCinematic
-│   │   │   ├── modal/      # CreateItemModal
-│   │   │   └── profile/    # ProfileModal
-│   │   ├── hooks/          # useRealtimeSync
-│   │   ├── lib/            # supabase, sound, utils, constants
-│   │   ├── pages/          # (future: auth pages)
-│   │   └── store/          # useAppStore (Zustand)
-│   └── .env.example
-├── backend/                # Express API
-│   ├── src/
-│   │   ├── routes/         # auth, workspace, journeys, items, stamps, users
-│   │   ├── middleware/     # auth.js
-│   │   ├── services/       # weekService.js
-│   │   └── db/             # supabase.js
-│   ├── supabase_schema.sql
-│   └── .env.example
-└── README.md
+│   └── src/
+│       ├── components/     # WorldMapSVG, CinematicUnlock, FinalCompletion, AddAchievementModal
+│       ├── hooks/          # useRealtimeSync
+│       ├── lib/            # api.js, constants.js, supabase.js
+│       ├── pages/          # WorldMap, PartnerMap, SharedKingdom, KingdomDetail, auth/
+│       └── store/          # useAppStore (Zustand)
+└── backend/                # Express API
+    └── src/
+        ├── routes/         # auth.js, kingdoms.js, achievements.js, users.js
+        ├── middleware/     # auth.js (JWT)
+        ├── seeds/          # kingdoms.js
+        └── db/             # supabase.js
 ```
 
 ## Getting started
@@ -47,17 +42,19 @@ adventure-passport/
 ### 1. Supabase setup
 
 1. Create a project at [supabase.com](https://supabase.com)
-2. Run `backend/supabase_schema.sql` in the SQL editor
-3. Copy your **Project URL** and **anon key** (frontend) + **service role key** (backend)
+2. Run `backend/supabase_schema.sql` in the SQL Editor
+3. Copy your **Project URL**, **anon key** (frontend), and **service role key** (backend)
 
 ### 2. Backend
 
 ```bash
 cd backend
 cp .env.example .env
-# fill in SUPABASE_URL, SUPABASE_SERVICE_KEY
+# Fill in SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, JWT_SECRET
 npm install
-npm run dev      # runs on :3001
+source ~/.nvm/nvm.sh && nvm use 20
+node src/seeds/kingdoms.js   # seed 7 kingdoms
+npm start                    # runs on :3000
 ```
 
 ### 3. Frontend
@@ -65,32 +62,27 @@ npm run dev      # runs on :3001
 ```bash
 cd frontend
 cp .env.example .env
-# fill in VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_API_URL
+# Fill in VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_API_URL
 npm install
-npm run dev      # runs on :5173
+npm run dev                  # runs on :5173
 ```
-
-> **Dev mode (no Supabase):** Both servers work without a Supabase connection — the backend uses offline stubs and the frontend uses seeded data.
 
 ## Two-user flow
 
-1. **User 1** signs up → receives an **invite code**
-2. User 1 shares the link: `https://your-app.vercel.app/join?code=XXXXXX`
-3. **User 2** opens the link, creates their account → both land in the same shared workspace
-4. Both users see the same journeys, passport, and activity in real time (Supabase Realtime)
+1. **User A** signs up → receives an **invite code**
+2. User A shares the invite code with User B (out of band)
+3. **User B** goes to `/auth/join`, enters the invite code → both users now share the same workspace
+4. Both users see each other's maps and Miveritas in real time (Supabase Realtime)
 
-## Design system
+## Routes
 
-Design tokens from `frontend/src/index.css` + `tailwind.config.js`:
-- **Colors:** rose palette (`#EFB0C9 / #F4C2D7 / #F8DAE9`), blue palette (`#B9D6F3 / #A1C9F1`), cream (`#F1E8D9`), ink (`#4a3142`)
-- **Fonts:** Fraunces (serif italic), Nunito (body), Caveat (handwritten)
-- **Animations:** stampDrop, inkSplash, orbPulse, glow, raySpin, fall (confetti), fadeUp, rise
-
-## Sound
-
-All sounds are synthesized via Web Audio API (`frontend/src/lib/sound.js`) — no audio files needed.
-
-- `sounds.stamp()` — stamp drop
-- `sounds.milestone()` — 4-note fanfare + sparkle
-- `sounds.click()` — soft click
-- `sounds.success()` — item added
+| Path | Description |
+|------|-------------|
+| `/` | My world map — 6 personal kingdoms + Miveritas center |
+| `/partner` | Partner's map — read-only view |
+| `/kingdom/:id` | Personal kingdom detail (my achievements) |
+| `/kingdom/:id?scope=partner` | Partner's kingdom — read-only |
+| `/shared` | Miveritas — shared kingdom, full access for both |
+| `/auth/signup` | Create workspace + account |
+| `/auth/join` | Join with invite code |
+| `/auth/login` | Login |

@@ -98,13 +98,19 @@ export default function CinematicStage() {
     const maxScale = zoomScaleForOrb(anchor.size)
 
     zoomAnimRef.current = runDiveZoom(camera, anchor, maxScale, {
-      onComplete: () => {
+      // Start showing KingdomDetail DIVE_OVERLAP_MS before zoom ends — overlapping transitions
+      // eliminate the visible pause between zoom completion and scene arrival.
+      onNearComplete: () => {
         diveFinishedRef.current = true
         zoomAnimRef.current = null
         setView('kingdom')
         if (selectedIdRef.current) {
           navigate(`/kingdom/${selectedIdRef.current}`, { replace: true })
         }
+      },
+      onComplete: () => {
+        // Zoom finished — KingdomDetail is already fading in via onNearComplete above.
+        // Just clean up willChange (already done inside runDiveZoom).
       },
     })
 

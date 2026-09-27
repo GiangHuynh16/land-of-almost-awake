@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom'
 import { useEffect, useRef, useState } from 'react'
 import { GLYPHS, STAMP_KEYS } from './glyphs.jsx'
 import { lighten, darken } from './colors.js'
@@ -11,17 +12,22 @@ export function SealSlot({
   onSeal,
   disabled = false,
   label,
-  pickerDir = 'up',
 }) {
-  const [open, setOpen] = useState(false)
+  const [pickerAnchor, setPickerAnchor] = useState(null)
   const [stage, setStage] = useState('idle')
   const [picked, setPicked] = useState(null)
   const timers = useRef([])
+  // Shared close-timer — both SealButton and StampPicker use the same one so
+  // entering the picker always cancels the button's pending close.
+  const closeTimer = useRef(null)
 
-  useEffect(() => () => timers.current.forEach(clearTimeout), [])
+  useEffect(() => () => {
+    timers.current.forEach(clearTimeout)
+    clearTimeout(closeTimer.current)
+  }, [])
 
   function runCeremony(glyph) {
-    setOpen(false)
+    setPickerAnchor(null)
     setPicked(glyph)
     setStage('drop')
     const T = timers.current
@@ -82,23 +88,13 @@ export function SealSlot({
         )}
 
         {!isSealed && !ceremonyActive && !isWaiting && (
-          <button
-            onPointerEnter={() => !disabled && setOpen(true)}
-            onPointerLeave={() => setOpen(false)}
-            onClick={(e) => { e.stopPropagation(); !disabled && setOpen(o => !o) }}
+          <SealButton
+            color={color}
             disabled={disabled}
-            style={{
-              all: 'unset',
-              position: 'absolute', inset: '10%',
-              cursor: disabled ? 'default' : 'pointer',
-              borderRadius: '50%',
-              transition: 'transform 240ms ease',
-              transform: open ? 'scale(1.05)' : 'scale(1)',
-              opacity: disabled ? 0.5 : 1,
-            }}
-          >
-            <EmptySocket color={color} />
-          </button>
+            closeTimer={closeTimer}
+            onOpenPicker={(rect) => setPickerAnchor(rect)}
+            onClosePicker={() => setPickerAnchor(null)}
+          />
         )}
 
         {isWaiting && (
@@ -158,15 +154,17 @@ export function SealSlot({
         )}
       </div>
 
-      {open && !isSealed && !ceremonyActive && (
+      {pickerAnchor && !isSealed && !ceremonyActive && createPortal(
         <StampPicker
           color={sanitizedColor}
           stamps={pickerStamps}
           onPick={runCeremony}
-          onClose={() => setOpen(false)}
+          onClose={() => setPickerAnchor(null)}
+          anchor={pickerAnchor}
           size={size}
-          direction={pickerDir}
-        />
+          closeTimer={closeTimer}
+        />,
+        document.body
       )}
 
       {label && !isSealed && !ceremonyActive && (
@@ -243,19 +241,77 @@ function WaxBlob({ color }) {
   )
 }
 
-function StampPicker({ color, stamps, onPick, onClose, size = 56, direction = 'up' }) {
+function SealButton({ color, disabled, closeTimer, onOpenPicker, onClosePicker }) {
+  const ref = useRef(null)
+
+  function openPicker() {
+    if (disabled) return
+    clearTimeout(closeTimer.current)
+    if (ref.current) {
+      onOpenPicker(ref.current.getBoundingClientRect())
+    }
+  }
+
+  function scheduledClose() {
+    closeTimer.current = setTimeout(onClosePicker, 120)
+  }
+
+  return (
+    <button
+      ref={ref}
+      onPointerEnter={openPicker}
+      onPointerLeave={scheduledClose}
+      onClick={(e) => {
+        e.stopPropagation()
+        if (!disabled) openPicker()
+      }}
+      disabled={disabled}
+      style={{
+        all: 'unset',
+        position: 'absolute', inset: '10%',
+        cursor: disabled ? 'default' : 'pointer',
+        borderRadius: '50%',
+        transition: 'transform 240ms ease',
+        opacity: disabled ? 0.5 : 1,
+      }}
+    >
+      <EmptySocket color={color} />
+    </button>
+  )
+}
+
+function StampPicker({ color, stamps, onPick, onClose, anchor, size = 56, closeTimer }) {
   const n = stamps.length
   const radius = size * 1.55
+
+  const cx = anchor.left + anchor.width / 2
+  const cy = anchor.top + anchor.height / 2
+
   const arc = Math.min(n * 22, 180)
-  const startBase = direction === 'up' ? -90 : 90
-  const start = startBase - arc / 2
+  const start = -90 - arc / 2   // always open upward
+
+  function cancelClose() {
+    // Cancel the shared timer — this is the same timer SealButton scheduled,
+    // so moving from button → picker no longer closes the picker.
+    clearTimeout(closeTimer.current)
+  }
+  function scheduleClose() {
+    closeTimer.current = setTimeout(onClose, 120)
+  }
+
   return (
-    <div onPointerLeave={onClose}
+    <div
+      onPointerEnter={cancelClose}
+      onPointerLeave={scheduleClose}
       style={{
-        position: 'absolute',
-        left: '50%', top: '50%',
-        width: 0, height: 0, zIndex: 30,
-      }}>
+        position: 'fixed',
+        left: cx,
+        top: cy,
+        width: 0, height: 0,
+        zIndex: 9999,
+        pointerEvents: 'auto',
+      }}
+    >
       <div style={{
         position: 'absolute',
         left: -radius - 16, top: -radius - 16,
@@ -266,8 +322,8 @@ function StampPicker({ color, stamps, onPick, onClose, size = 56, direction = 'u
       }} />
       {stamps.map((g, i) => {
         const angle = (start + (arc * i) / Math.max(1, n - 1)) * (Math.PI / 180)
-        const cx = Math.cos(angle) * radius
-        const cy = Math.sin(angle) * radius
+        const sx = Math.cos(angle) * radius
+        const sy = Math.sin(angle) * radius
         const dly = i * 26
         return (
           <button
@@ -276,7 +332,7 @@ function StampPicker({ color, stamps, onPick, onClose, size = 56, direction = 'u
             style={{
               all: 'unset',
               position: 'absolute',
-              left: cx - size * 0.32, top: cy - size * 0.32,
+              left: sx - size * 0.32, top: sy - size * 0.32,
               width: size * 0.64, height: size * 0.64,
               cursor: 'pointer', borderRadius: '50%',
               background: `radial-gradient(circle at 38% 32%, ${lighten(color, 0.3)}, ${color} 65%, ${darken(color, 0.4)} 100%)`,

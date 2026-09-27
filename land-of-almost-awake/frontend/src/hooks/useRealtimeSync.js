@@ -7,6 +7,8 @@ export function useRealtimeSync(workspaceId) {
   const updateAchievement = useAppStore((s) => s.updateAchievement)
   const removeAchievement = useAppStore((s) => s.removeAchievement)
   const triggerUnlock = useAppStore((s) => s.triggerUnlock)
+  const loadPartnerKingdoms = useAppStore((s) => s.loadPartnerKingdoms)
+  const userId = useAppStore((s) => s.user?.id)
 
   useEffect(() => {
     if (!workspaceId) return
@@ -21,7 +23,11 @@ export function useRealtimeSync(workspaceId) {
           table: 'achievements',
           filter: `workspace_id=eq.${workspaceId}`,
         },
-        (payload) => addAchievement(payload.new)
+        (payload) => {
+          addAchievement(payload.new)
+          // If the change came from the partner, refresh their kingdom progress
+          if (payload.new.created_by !== userId) loadPartnerKingdoms()
+        }
       )
       .on(
         'postgres_changes',
@@ -31,7 +37,10 @@ export function useRealtimeSync(workspaceId) {
           table: 'achievements',
           filter: `workspace_id=eq.${workspaceId}`,
         },
-        (payload) => updateAchievement(payload.new)
+        (payload) => {
+          updateAchievement(payload.new)
+          if (payload.new.created_by !== userId) loadPartnerKingdoms()
+        }
       )
       .on(
         'postgres_changes',
@@ -41,7 +50,10 @@ export function useRealtimeSync(workspaceId) {
           table: 'achievements',
           filter: `workspace_id=eq.${workspaceId}`,
         },
-        (payload) => removeAchievement(payload.old.id)
+        (payload) => {
+          removeAchievement(payload.old.id)
+          if (payload.old.created_by !== userId) loadPartnerKingdoms()
+        }
       )
       .subscribe()
 
@@ -56,5 +68,5 @@ export function useRealtimeSync(workspaceId) {
       supabase.removeChannel(tableChannel)
       supabase.removeChannel(broadcastChannel)
     }
-  }, [workspaceId, addAchievement, updateAchievement, removeAchievement, triggerUnlock])
+  }, [workspaceId, userId, addAchievement, updateAchievement, removeAchievement, triggerUnlock, loadPartnerKingdoms])
 }

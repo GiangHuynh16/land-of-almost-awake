@@ -38,7 +38,7 @@ export function ViewToggle({ view, setView, kingdom, isMiveritas }) {
   )
 }
 
-export function PerspectiveToggle({ perspective, setPerspective }) {
+export function PerspectiveToggle({ perspective, setPerspective, myName = 'me', partnerName = 'partner' }) {
   return (
     <div style={{
       display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -47,8 +47,8 @@ export function PerspectiveToggle({ perspective, setPerspective }) {
       backdropFilter: 'blur(10px)',
     }}>
       {[
-        { id: 'elsa', color: 'var(--k-veritas-a)', label: 'Elsa' },
-        { id: 'granny', color: 'var(--k-veritas-b)', label: 'Granny' },
+        { id: 'me', color: 'var(--k-veritas-a)', label: myName },
+        { id: 'partner', color: 'var(--k-veritas-b)', label: partnerName },
       ].map(p => (
         <button key={p.id} onClick={() => setPerspective(p.id)} style={{
           all: 'unset', cursor: 'pointer',
@@ -353,21 +353,22 @@ function toRoman(n) {
   return map[n - 1] || String(n)
 }
 
-export function MiveritasStarlog({ deeds, perspective, onSeal }) {
+export function MiveritasStarlog({ deeds, perspective, onSeal, myName = 'me', partnerName = 'partner' }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       <SectionDivider label="joint promises" />
       {deeds.map((d, i) => (
         <MiveritasRow key={d.id} deed={d} index={i} perspective={perspective}
+          myName={myName} partnerName={partnerName}
           onSeal={(who, g) => onSeal('miveritas', d.id, who, g)} />
       ))}
     </div>
   )
 }
 
-function MiveritasRow({ deed, index, perspective, onSeal }) {
-  const sealedElsa = deed.sealedBy?.elsa
-  const sealedGranny = deed.sealedBy?.granny
+function MiveritasRow({ deed, index, perspective, onSeal, myName = 'me', partnerName = 'partner' }) {
+  const sealedElsa = deed.sealedBy?.me ?? deed.sealedBy?.elsa
+  const sealedGranny = deed.sealedBy?.partner ?? deed.sealedBy?.granny
   const both = sealedElsa && sealedGranny
   const half = (sealedElsa && !sealedGranny) || (!sealedElsa && sealedGranny)
   const [merge, setMerge] = useState(false)
@@ -382,7 +383,7 @@ function MiveritasRow({ deed, index, perspective, onSeal }) {
     prevBoth.current = both
   }, [both])
 
-  const focused = !both && (perspective === 'elsa' ? !sealedElsa : !sealedGranny)
+  const focused = !both && (perspective === 'me' ? !sealedElsa : !sealedGranny)
 
   return (
     <div style={{
@@ -397,7 +398,7 @@ function MiveritasRow({ deed, index, perspective, onSeal }) {
       {focused && (
         <div style={{
           position: 'absolute', inset: '4px 0', borderRadius: 4,
-          background: perspective === 'elsa'
+          background: perspective === 'me'
             ? 'linear-gradient(90deg, rgba(122, 223, 226, 0.10), transparent 70%)'
             : 'linear-gradient(-90deg, rgba(228, 137, 200, 0.10), transparent 70%)',
           pointerEvents: 'none',
@@ -410,9 +411,9 @@ function MiveritasRow({ deed, index, perspective, onSeal }) {
           color="#7adfe2"
           state={sealedElsa ? 'sealed' : (half && !sealedElsa ? 'waiting' : 'empty')}
           chosen={sealedElsa?.glyph}
-          onSeal={(g) => onSeal('elsa', g)}
+          onSeal={(g) => onSeal('me', g)}
           pickerStamps={stampsFor('miveritas')}
-          label={!sealedElsa ? 'elsa' : undefined} />
+          label={!sealedElsa ? myName.toLowerCase() : undefined} />
       </div>
 
       <div>
@@ -437,7 +438,7 @@ function MiveritasRow({ deed, index, perspective, onSeal }) {
           {both
             ? '✦ SEALED BY BOTH'
             : half
-              ? `WAITING FOR ${sealedElsa ? 'GRANNY' : 'ELSA'}`
+              ? `WAITING FOR ${sealedElsa ? partnerName.toUpperCase() : myName.toUpperCase()}`
               : 'AWAITING BOTH SEALS'}
         </div>
       </div>
@@ -448,9 +449,9 @@ function MiveritasRow({ deed, index, perspective, onSeal }) {
           color="#e489c8"
           state={sealedGranny ? 'sealed' : (half && !sealedGranny ? 'waiting' : 'empty')}
           chosen={sealedGranny?.glyph}
-          onSeal={(g) => onSeal('granny', g)}
+          onSeal={(g) => onSeal('partner', g)}
           pickerStamps={stampsFor('miveritas')}
-          label={!sealedGranny ? 'granny' : undefined} />
+          label={!sealedGranny ? partnerName.toLowerCase() : undefined} />
       </div>
 
       {merge && (
@@ -470,7 +471,7 @@ function MiveritasRow({ deed, index, perspective, onSeal }) {
   )
 }
 
-export function MiveritasTarot({ deeds, perspective, onSeal }) {
+export function MiveritasTarot({ deeds, perspective, onSeal, myName = 'me', partnerName = 'partner' }) {
   return (
     <div className="k-tarot" style={{
       display: 'grid',
@@ -479,15 +480,16 @@ export function MiveritasTarot({ deeds, perspective, onSeal }) {
     }}>
       {deeds.map((d, i) => (
         <MiveritasTarotCard key={d.id} deed={d} index={i} perspective={perspective}
+          myName={myName} partnerName={partnerName}
           onSeal={(who, g) => onSeal('miveritas', d.id, who, g)} />
       ))}
     </div>
   )
 }
 
-function MiveritasTarotCard({ deed, index, onSeal }) {
-  const sealedElsa = deed.sealedBy?.elsa
-  const sealedGranny = deed.sealedBy?.granny
+function MiveritasTarotCard({ deed, index, onSeal, myName = 'me', partnerName = 'partner' }) {
+  const sealedElsa = deed.sealedBy?.me ?? deed.sealedBy?.elsa
+  const sealedGranny = deed.sealedBy?.partner ?? deed.sealedBy?.granny
   const both = sealedElsa && sealedGranny
   const rot = ((index * 31) % 5) - 2
   return (
@@ -549,17 +551,17 @@ function MiveritasTarotCard({ deed, index, onSeal }) {
             <SealSlot size={42} color="#7adfe2"
               state={sealedElsa ? 'sealed' : 'empty'}
               chosen={sealedElsa?.glyph}
-              onSeal={(g) => onSeal('elsa', g)}
+              onSeal={(g) => onSeal('me', g)}
               pickerStamps={stampsFor('miveritas')} />
-            <div className="mono" style={{ fontSize: 7, color: 'rgba(200, 156, 90, 0.6)', letterSpacing: '0.2em', marginTop: 8 }}>ELSA</div>
+            <div className="mono" style={{ fontSize: 7, color: 'rgba(200, 156, 90, 0.6)', letterSpacing: '0.2em', marginTop: 8 }}>{myName.toUpperCase()}</div>
           </div>
           <div style={{ textAlign: 'center' }}>
             <SealSlot size={42} color="#e489c8"
               state={sealedGranny ? 'sealed' : 'empty'}
               chosen={sealedGranny?.glyph}
-              onSeal={(g) => onSeal('granny', g)}
+              onSeal={(g) => onSeal('partner', g)}
               pickerStamps={stampsFor('miveritas')} />
-            <div className="mono" style={{ fontSize: 7, color: 'rgba(200, 156, 90, 0.6)', letterSpacing: '0.2em', marginTop: 8 }}>GRANNY</div>
+            <div className="mono" style={{ fontSize: 7, color: 'rgba(200, 156, 90, 0.6)', letterSpacing: '0.2em', marginTop: 8 }}>{partnerName.toUpperCase()}</div>
           </div>
         </div>
       </div>
